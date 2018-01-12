@@ -9,4 +9,8 @@ import cn.homjie.spring.boot.web.travel.entity.HomeDO;
 public interface HomeService {
 
     HomeDO findByNumber(Long number);
+
+    void logMain();
+
+    void logInner();
 }

@@ -14,7 +14,7 @@ import java.util.List;
  * @author jiehong.jh
  * @date 2018/1/12
  */
-@Repository
+@Repository("homeDao")
 @Slf4j
 public class HomeDao {
 
@@ -47,5 +47,13 @@ public class HomeDao {
             }
         }
         return null;
+    }
+
+    public void logMainSub1() {
+        log.info("[logMainSub1]执行耗时：{}", SleepUtil.hang());
+    }
+
+    public void logMainSub2() {
+        log.info("[logMainSub2]执行耗时：{}", SleepUtil.hang());
     }
 }

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
  * @author jiehong.jh
  * @date 2018/1/12
  */
-@Service
+@Service("homeService")
 @Slf4j
 public class HomeServiceImpl implements HomeService {
     @Autowired
@@ -21,5 +21,23 @@ public class HomeServiceImpl implements HomeService {
     public HomeDO findByNumber(Long number) {
         SleepUtil.hang(log);
         return homeDao.findByNumber(number);
+    }
+
+    @Override
+    public void logMain() {
+        homeDao.logMainSub1();
+        // 本地调用，不走AOP，LogProfiler无法监控
+        logInner();
+        homeDao.logMainSub2();
+        logPrivate();
+    }
+
+    @Override
+    public void logInner() {
+        log.info("[logInner]执行耗时：{}", SleepUtil.hang());
+    }
+
+    private void logPrivate() {
+        log.info("[logPrivate]执行耗时：{}", SleepUtil.hang());
     }
 }

@@ -1,7 +1,6 @@
 package cn.homjie.spring.boot.web.travel.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,76 +12,91 @@ import java.util.concurrent.TimeUnit;
  * @author jiehong.jh
  * @date 2018/1/12
  */
+@Slf4j
 public class QuickWatch {
+
+    private static final String TAB = "  ";
 
     private static final String INFO = "RT [{}] is {}";
     private static final String INFO_TITLE = "[{}] RT [{}] is {}";
-    private static final Logger DEFAULT = LoggerFactory.getLogger("QuickWatch");
 
-    private String title;
-    private boolean titleExist;
-
-    private Logger logger;
+    private int deep;
 
     private long start;
     private long limit;
 
-    private int before;
-    private List<Long> buffer = new ArrayList<>(8);
+    private int order;
+    private List<Integer> deeps = new ArrayList<>(15);
+    private List<String> titles = new ArrayList<>(15);
+    private List<Long> buffer = new ArrayList<>(15);
 
     public QuickWatch() {
-        this(null, null, 3, TimeUnit.SECONDS);
-    }
-
-    public QuickWatch(String title) {
-        this(title, null, 3, TimeUnit.SECONDS);
+        this(3, TimeUnit.SECONDS);
     }
 
     public QuickWatch(int min, TimeUnit unit) {
-        this(null, null, min, unit);
-    }
-
-    public QuickWatch(Logger logger, int min, TimeUnit unit) {
-        this(null, logger, min, unit);
-    }
-
-    public QuickWatch(String title, int min, TimeUnit unit) {
-        this(title, null, min, unit);
-    }
-
-    public QuickWatch(String title, Logger logger, int min, TimeUnit unit) {
-        this.title = title;
-        titleExist = title != null;
-        this.logger = logger == null ? DEFAULT : logger;
         start = System.currentTimeMillis();
         limit = start + unit.toMillis(min);
     }
 
-    /**
-     * 打标记，如果在最小时间限制内则不输出
-     */
-    public void mark() {
-        mark(false);
+    public void mark(String title) {
+        mark(title, null, false);
     }
 
-    public void mark(boolean force) {
-        if (!logger.isInfoEnabled()) {
+    public void mark(String title, Long exec, boolean force) {
+        if (!log.isInfoEnabled()) {
             return;
         }
+        deeps.add(deep);
+        titles.add(title);
         long now = System.currentTimeMillis();
-        buffer.add(now - start);
+        if (exec != null) {
+            buffer.add(exec);
+        } else {
+            buffer.add(now - start);
+        }
         if (!force && now < limit) {
             return;
         }
         int size = buffer.size();
         for (int i = 0; i < size; i++) {
+            int d = deeps.get(i);
+            String t = titles.get(i);
+            boolean titleExist = t != null;
             if (titleExist) {
-                logger.info(INFO_TITLE, title, before + i, buffer.get(i));
+                log.info(pretty(INFO_TITLE, d), t, order + i, buffer.get(i));
             } else {
-                logger.info(INFO, before + i, buffer.get(i));
+                log.info(pretty(INFO, d), order + i, buffer.get(i));
             }
         }
-        before = before + size;
+        order = order + size;
         buffer.clear();
+        titles.clear();
+        deeps.clear();
+    }
+
+    public void deepIn() {
+        deep++;
+    }
+
+    public void deepOut() {
+        deep--;
+    }
+
+    public int deep() {
+        return deep;
+    }
+
+    private String pretty(String template, int d) {
+        if (d > 0) {
+            StringBuilder sb = new StringBuilder();
+            int i = 0;
+            while (i++ < d) {
+                sb.append(TAB);
+            }
+            return sb.append(template).toString();
+        } else {
+            return template;
+        }
     }
 }

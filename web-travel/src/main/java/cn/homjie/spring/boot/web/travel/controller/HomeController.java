@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @date 2018/1/12
  */
 @Slf4j
-@RestController
+@RestController("homeController")
 @RequestMapping(value = "/home")
 public class HomeController {
 
@@ -31,5 +31,12 @@ public class HomeController {
     public HomeDO home(@PathVariable Long num) {
         SleepUtil.hang(log);
         return homeService.findByNumber(num);
+    }
+
+    @GetMapping("log")
+    public String log() {
+        homeService.logMain();
+        SleepUtil.hang(log);
+        return "Log Success";
     }
 }
