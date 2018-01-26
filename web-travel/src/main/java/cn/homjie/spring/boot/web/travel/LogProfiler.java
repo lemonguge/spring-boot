@@ -1,11 +1,13 @@
 package cn.homjie.spring.boot.web.travel;
 
 import cn.homjie.spring.boot.web.travel.util.QuickWatch;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,6 +21,9 @@ import org.springframework.stereotype.Component;
 public class LogProfiler {
 
     private ThreadLocal<QuickWatch> threadLocal = new ThreadLocal<>();
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Pointcut("within(cn.homjie.spring.boot.web.travel..*)")
     private void basePackage() {}
@@ -36,11 +41,13 @@ public class LogProfiler {
         QuickWatch watch = start();
         int deep = watch.deep();
         long start = System.currentTimeMillis();
+        Object result = null;
         try {
-            return pjp.proceed();
+            result = pjp.proceed();
+            return result;
         } finally {
             long exec = System.currentTimeMillis() - start;
-            watch.mark(title, exec, false);
+            watch.mark(title, toJson(pjp.getArgs()), toJson(result), exec, false);
             if (deep == 0) {
                 threadLocal.remove();
             } else {
@@ -58,6 +65,17 @@ public class LogProfiler {
             watch.deepIn();
         }
         return watch;
+    }
+
+    private String toJson(Object o) {
+        if (o == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(o);
+        } catch (Exception e) {
+            return "exception[" + e.getMessage() + "]";
+        }
     }
 
 }

@@ -17,8 +17,9 @@ public class QuickWatch {
 
     private static final String TAB = "  ";
 
-    private static final String INFO = "RT [{}] is {}";
-    private static final String INFO_TITLE = "[{}] RT [{}] is {}";
+    // order title
+    private static final String INFO_TITLE = "[{}][{}] rt is {}";
+    private static final String INFO_DETAIL = "[{}][{}] rt is [{}], args is {}, result is {}";
 
     private int deep;
 
@@ -26,9 +27,7 @@ public class QuickWatch {
     private long limit;
 
     private int order;
-    private List<Integer> deeps = new ArrayList<>(15);
-    private List<String> titles = new ArrayList<>(15);
-    private List<Long> buffer = new ArrayList<>(15);
+    private List<DeepInfo> deepInfos = new ArrayList<>(15);
 
     public QuickWatch() {
         this(3, TimeUnit.SECONDS);
@@ -44,35 +43,48 @@ public class QuickWatch {
     }
 
     public void mark(String title, Long exec, boolean force) {
-        if (!log.isInfoEnabled()) {
+        if (ignoreOutput(title, null, null, exec, force)) {
             return;
         }
-        deeps.add(deep);
-        titles.add(title);
-        long now = System.currentTimeMillis();
-        if (exec != null) {
-            buffer.add(exec);
-        } else {
-            buffer.add(now - start);
-        }
-        if (!force && now < limit) {
-            return;
-        }
-        int size = buffer.size();
+        int size = deepInfos.size();
         for (int i = 0; i < size; i++) {
-            int d = deeps.get(i);
-            String t = titles.get(i);
-            boolean titleExist = t != null;
-            if (titleExist) {
-                log.info(pretty(INFO_TITLE, d), t, order + i, buffer.get(i));
-            } else {
-                log.info(pretty(INFO, d), order + i, buffer.get(i));
-            }
+            DeepInfo di = deepInfos.get(i);
+            log.info(pretty(INFO_TITLE, di.deep), order + i, di.title, di.exec);
         }
         order = order + size;
-        buffer.clear();
-        titles.clear();
-        deeps.clear();
+        deepInfos.clear();
+    }
+
+    public void mark(String title, String args, String result, Long exec, boolean force) {
+        if (ignoreOutput(title, args, result, exec, force)) {
+            return;
+        }
+        int size = deepInfos.size();
+        for (int i = 0; i < size; i++) {
+            DeepInfo di = deepInfos.get(i);
+            log.info(pretty(INFO_DETAIL, di.deep), order + i, di.title, di.exec, di.args, di.result);
+        }
+        order = order + size;
+        deepInfos.clear();
+    }
+
+    private boolean ignoreOutput(String title, String args, String result, Long exec, boolean force) {
+        if (!log.isInfoEnabled()) {
+            return true;
+        }
+        DeepInfo deepInfo = new DeepInfo();
+        deepInfos.add(deepInfo);
+        deepInfo.deep = deep;
+        deepInfo.title = title;
+        deepInfo.args = args;
+        deepInfo.result = result;
+        long now = System.currentTimeMillis();
+        if (exec != null) {
+            deepInfo.exec = exec;
+        } else {
+            deepInfo.exec = now - start;
+        }
+        return !force && now < limit;
     }
 
     public void deepIn() {
@@ -98,5 +110,13 @@ public class QuickWatch {
         } else {
             return template;
         }
+    }
+
+    private static class DeepInfo {
+        int deep;
+        String title;
+        String args;
+        String result;
+        long exec;
     }
 }
