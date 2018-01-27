@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class QuickWatch {
 
-    private static final String TAB = "  ";
+    private static final String DEEP = "-";
 
     // order title
     private static final String INFO_TITLE = "[{}][{}] rt is {}";
@@ -104,7 +104,7 @@ public class QuickWatch {
             StringBuilder sb = new StringBuilder();
             int i = 0;
             while (i++ < d) {
-                sb.append(TAB);
+                sb.append(DEEP);
             }
             return sb.append(template).toString();
         } else {
